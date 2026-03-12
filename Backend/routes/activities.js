@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { logActivity, getActivities } = require('../controllers/activityController');
+
+const { createActivity, getActivities } = require('../controller/activityController');
+
 const auth = require('../middleware/authMiddleware');
 
-router.post('/', auth, logActivity);
-router.get('/', auth, getActivities);
+router.post('/', auth, createActivity);   // log new activity
+router.get('/', auth, getActivities);     // get user activities
 
 module.exports = router;

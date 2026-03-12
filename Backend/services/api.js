@@ -1,3 +1,5 @@
+// api.js
+
 const BASE_URL = 'http://localhost:5000/api';
 
 // Helper to get token
@@ -6,7 +8,7 @@ const getAuthHeaders = () => {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 };
 
-// Auth APIs
+// ── Auth APIs ──
 export const signup = async (userData) => {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
@@ -39,7 +41,7 @@ export const updateProfile = async (data) => {
   return res.json();
 };
 
-// Activities APIs
+// ── Activities APIs ──
 export const logActivity = async (activity) => {
   const res = await fetch(`${BASE_URL}/activities`, {
     method: 'POST',
@@ -49,18 +51,18 @@ export const logActivity = async (activity) => {
   return res.json();
 };
 
-export const getActivities = async (type, range) => {
+export const getActivities = async (type = 'All', range = 'all') => {
   const res = await fetch(`${BASE_URL}/activities?type=${type}&range=${range}`, { headers: getAuthHeaders() });
   return res.json();
 };
 
-// Analytics APIs
-export const getAnalytics = async (period) => {
+// ── Analytics APIs ──
+export const getAnalytics = async (period = 'daily') => {
   const res = await fetch(`${BASE_URL}/analytics/${period}`, { headers: getAuthHeaders() });
   return res.json();
 };
 
-// Goals APIs
+// ── Goals APIs ──
 export const createGoal = async (goal) => {
   const res = await fetch(`${BASE_URL}/goals`, {
     method: 'POST',
@@ -75,13 +77,13 @@ export const getGoals = async () => {
   return res.json();
 };
 
-// Achievements APIs
+// ── Achievements APIs ──
 export const getAchievements = async () => {
   const res = await fetch(`${BASE_URL}/achievements`, { headers: getAuthHeaders() });
   return res.json();
 };
 
-// Notifications APIs
+// ── Notifications APIs ──
 export const getNotifications = async () => {
   const res = await fetch(`${BASE_URL}/notifications`, { headers: getAuthHeaders() });
   return res.json();
@@ -95,7 +97,7 @@ export const markNotificationRead = async (id) => {
   return res.json();
 };
 
-// Sustainability Hub APIs
+// ── Sustainability Knowledge Hub APIs ──
 export const getArticles = async () => {
   const res = await fetch(`${BASE_URL}/articles`, { headers: getAuthHeaders() });
   return res.json();
@@ -103,5 +105,11 @@ export const getArticles = async () => {
 
 export const getArticle = async (id) => {
   const res = await fetch(`${BASE_URL}/articles/${id}`, { headers: getAuthHeaders() });
+  return res.json();
+};
+
+// ── Recommendations APIs ──
+export const getRecommendations = async () => {
+  const res = await fetch(`${BASE_URL}/recommendations`, { headers: getAuthHeaders() });
   return res.json();
 };
