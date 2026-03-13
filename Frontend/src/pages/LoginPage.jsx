@@ -42,24 +42,26 @@ export default function LoginPage() {
   }
 
   const handleLogin = async () => {
-    try {
+  try {
 
-      await login({
-        email: formData.email,
-        password: formData.password
-      })
+    const res = await login({
+      email: formData.email,
+      password: formData.password
+    });
 
-      alert("Login successfully 🌱")
+    console.log("LOGIN RESPONSE:", res);
 
-      navigate("/app/dashboard")
+    localStorage.setItem("ahb_token", res.token); // ✅ correct
 
-    } catch (err) {
+    alert("Login successfully 🌱");
 
-      alert(err.response?.data?.message || "Login failed")
+    navigate("/app/dashboard");
 
-    }
+  } catch (err) {
+    console.log(err);
+    alert(err.response?.data?.message || "Login failed");
   }
-
+};
   return (
     <AuthCard
       title="Welcome Back"

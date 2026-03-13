@@ -1,7 +1,9 @@
-import { useState } from 'react'
+
 import { C } from '../constants/colors'
 import Card from '../components/ui/Card'
 import Btn from '../components/ui/Btn'
+import { getProfile,updateProfile  } from "../services/api"
+import { useState, useEffect } from 'react'
 
 const inp = {
   width: '100%',
@@ -22,13 +24,68 @@ function Field({ label, children }) {
   return <div><label style={lbl}>{label}</label>{children}</div>
 }
 
+
 export default function SettingsPage() {
+
+
+
+
   const [saved, setSaved] = useState(false)
 
-  const handleSave = () => {
+ const handleSave = async () => {
+  try {
+
+    await updateProfile(profile)
+    loadProfile()
+
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+
+  } catch (err) {
+    console.log(err)
   }
+}
+
+  const [profile, setProfile] = useState({
+  name: "",
+  email: "",
+  country: "",
+  dietType: "",
+    carbonGoal: ""
+})
+
+const handleChange = (e) => {
+  setProfile({
+    ...profile,
+    [e.target.name]: e.target.value
+  })
+}
+
+const loadProfile = async () => {
+  try {
+    const data = await getProfile(); // ✅ correct
+
+    console.log("PROFILE DATA:", data);
+
+    setProfile({
+      name: data?.name || "",
+      email: data?.email || "",
+      country: data?.country || "",
+      dietType: data?.lifestylePreferences?.dietType || "",
+      carbonGoal: data?.carbonGoal || ""
+    });
+
+  } catch (err) {
+    console.log("Profile Error:", err.response?.data || err.message);
+  }
+};
+useEffect(() => {
+  const token = localStorage.getItem("ahb_token");
+
+  if (token) {
+    loadProfile();
+  }
+}, []);
 
   return (
     <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -46,9 +103,9 @@ export default function SettingsPage() {
             background: `linear-gradient(135deg, ${C.deepGreen}, ${C.freshGreen})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: 26,
-          }}>A</div>
+          }}>{profile.name?.charAt(0)}</div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 15, color: C.text }}>Alex Johnson</div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: C.text }}> {profile.name}</div>
             <button style={{
               background: 'none', border: 'none',
               color: C.deepGreen, fontSize: 13,
@@ -59,31 +116,62 @@ export default function SettingsPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
           <Field label="Full Name">
-            <input style={inp} defaultValue="Alex Johnson" />
+          <input
+          type = "text"
+          name = "name"
+          value={profile.name}
+          style={inp}
+          onChange={handleChange}/>
           </Field>
+
           <Field label="Email Address">
-            <input type="email" style={inp} defaultValue="alex@example.com" />
+           <input
+          type = "email"
+          name = "email"
+          value={profile.email}
+          style={inp}
+          onChange={handleChange}/>
           </Field>
+          
           <Field label="Location">
-            <input style={inp} defaultValue="San Francisco, CA" />
+                     <input
+          type = "text"
+          name = "country"
+            value={profile.country}
+          style={inp}
+          onChange={handleChange}/>
           </Field>
+          
           <Field label="Diet Preference">
-            <select style={inp}>
-              <option>Vegetarian</option>
-              <option>Vegan</option>
-              <option>Omnivore</option>
-              <option>Pescatarian</option>
+
+            <select 
+            name="dietType"
+            value={profile.dietType}
+            style={inp}
+            onChange={handleChange}>
+
+             <option value="Vegetarian">Vegetarian</option>
+<option value="Vegan">Vegan</option>
+<option value="Omnivore">Omnivore</option>
+<option value="Pescatarian">Pescatarian</option>
             </select>
+
           </Field>
           <Field label="Carbon Goal (kg/month)">
-            <input type="number" style={inp} defaultValue="180" />
+            <input 
+            type="number" 
+            name="carbonGoal"
+            value={profile.carbonGoal}
+            style={inp} 
+           onChange={handleChange} />
           </Field>
 
           <div style={{ paddingTop: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
             <Btn onClick={handleSave}>
-              {saved ? '✓ Saved!' : 'Save Changes'}
-            </Btn>
+               {saved ? '✓ Saved!' : 'Save Changes'}
+           </Btn>
             {saved && (
               <span style={{ fontSize: 13, color: C.freshGreen, fontWeight: 600 }}>
                 Profile updated successfully.

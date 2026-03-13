@@ -17,7 +17,10 @@ const notificationRoutes = require('./routes/notifications.js');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // or your frontend port
+  credentials: true
+}));
 app.use(express.json());
 Database();
 
