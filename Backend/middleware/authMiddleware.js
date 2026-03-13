@@ -5,6 +5,7 @@ module.exports = (req, res, next) => {
   try {
     //Get token from header (Authorization: Bearer <token>)
     let token = req.headers.authorization?.split(' ')[1];
+    console.log("TOKEN RECEIVED:", token);
 
     // Optional: allow token from query string for testing
     if (!token && req.query.token) token = req.query.token;

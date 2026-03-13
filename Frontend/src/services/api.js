@@ -13,8 +13,10 @@ const API = axios.create({
   //  Attach JWT token automatically
 
 
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
+      API.interceptors.request.use((req) => {
+  const token = localStorage.getItem("ahb_token");
+ 
+  
 
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
@@ -44,12 +46,12 @@ export const login = async (credentials) => {
 ================================= */
 
 export const getProfile = async () => {
-  const res = await API.get("/users/me");
+  const res = await API.get("/auth/me");
   return res.data;
 };
 
 export const updateProfile = async (data) => {
-  const res = await API.put("/users/me", data);
+  const res = await API.put("/auth/me", data);
   return res.data;
 };
 
@@ -142,3 +144,7 @@ export const getRecommendations = async () => {
   const res = await API.get("/recommendations");
   return res.data;
 };
+
+console.log("Api instance loaded");
+
+export default API;
