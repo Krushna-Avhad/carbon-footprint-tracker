@@ -1,6 +1,9 @@
 import { C } from '../constants/colors'
 import AuthCard from '../components/ui/AuthCard'
 import Btn from '../components/ui/Btn'
+import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { signup } from "../services/api"
 
 const inp = {
   width: '100%',
@@ -22,20 +25,63 @@ const lbl = {
   fontWeight: 500,
 }
 
-export default function SignupPage({ setView }) {
+export default function SignupPage() {
+
+  const navigate = useNavigate()
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    country: "",
+    dietType: ""
+  })
+
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleSignup = async () => {
+    try {
+
+      await signup({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        country: form.country,
+        dietType: form.dietType
+      })
+
+      alert("Account created successfully 🌱")
+
+      navigate("/login")
+
+    } catch (err) {
+
+      alert(err.response?.data?.message || "Signup failed")
+
+    }
+  }
+
   return (
     <AuthCard
       title="Create Account"
       subtitle="Start your eco journey with CarbonTrack"
       footer={
         <>
-          Already have an account?{' '}
+          Already have an account?{" "}
           <button
-            onClick={() => setView('login')}
+            onClick={() => navigate('/login')}
             style={{
-              color: C.deepGreen, fontWeight: 600,
-              background: 'none', border: 'none',
-              cursor: 'pointer', fontFamily: "'Poppins', sans-serif",
+              color: C.deepGreen,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'Poppins', sans-serif",
             }}
           >
             Login
@@ -43,39 +89,83 @@ export default function SignupPage({ setView }) {
         </>
       }
     >
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
         <div>
           <label style={lbl}>Full Name</label>
-          <input placeholder="Alex Johnson" style={inp} />
+          <input
+            name="name"
+            placeholder="Alex Johnson"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div>
           <label style={lbl}>Email Address</label>
-          <input type="email" placeholder="you@example.com" style={inp} />
+          <input
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div>
           <label style={lbl}>Password</label>
-          <input type="password" placeholder="••••••••" style={inp} />
+          <input
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div>
           <label style={lbl}>Location</label>
-          <input placeholder="City, Country" style={inp} />
+          <input
+            name="country"
+            placeholder="City, Country"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div>
           <label style={lbl}>Diet Preference</label>
-          <select style={inp}>
+          <select
+            name="dietType"
+            style={inp}
+            onChange={handleChange}
+          >
+            <option value="">Select</option>
             <option>Vegetarian</option>
             <option>Vegan</option>
             <option>Omnivore</option>
             <option>Pescatarian</option>
           </select>
         </div>
-        <Btn onClick={() => setView('app')} style={{ width: '100%', padding: 14, fontSize: 15, marginTop: 6 }}>
+
+        <Btn
+          onClick={handleSignup}
+          style={{ width: '100%', padding: 14, fontSize: 15, marginTop: 6 }}
+        >
           Create Account 🌿
         </Btn>
-        <Btn onClick={() => setView('landing')} variant="ghost" style={{ width: '100%', padding: 12, fontSize: 13 }}>
+
+        <Btn
+          onClick={() => navigate('/')}
+          variant="ghost"
+          style={{ width: '100%', padding: 12, fontSize: 13 }}
+        >
           ← Back to Home
         </Btn>
+
       </div>
+
     </AuthCard>
   )
 }

@@ -25,6 +25,10 @@ const calculateCO2 = (type, data) => {
     return data.hours * 0.5
   }
 
+  if(type === "waste"){
+    return data.kgWaste * 1.2; 
+}
+
   return 0
 }
 

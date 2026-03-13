@@ -1,49 +1,61 @@
-import { useState } from 'react'
-import Sidebar from './Sidebar'
-import Navbar from './Navbar'
-import { C } from '../../constants/colors'
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import DashboardPage      from '../../pages/DashboardPage'
-import LogActivityPage    from '../../pages/LogActivityPage'
-import ActivityHistoryPage from '../../pages/ActivityHistoryPage'
-import CarbonAnalyticsPage from '../../pages/CarbonAnalyticsPage'
-import GoalsPage          from '../../pages/GoalsPage'
-import AchievementsPage   from '../../pages/AchievementsPage'
-import SustainabilityHubPage from '../../pages/SustainabilityHubPage'
-import NotificationsPage  from '../../pages/NotificationsPage'
-import SettingsPage       from '../../pages/SettingsPage'
+import Sidebar from "./Sidebar";
+import Navbar from "./Navbar";
+import { C } from "../../constants/colors";
 
-const PAGE_MAP = {
-  dashboard:     DashboardPage,
-  log:           LogActivityPage,
-  history:       ActivityHistoryPage,
-  analytics:     CarbonAnalyticsPage,
-  goals:         GoalsPage,
-  achievements:  AchievementsPage,
-  hub:           SustainabilityHubPage,
-  notifications: NotificationsPage,
-  settings:      SettingsPage,
-}
+import DashboardPage from "../../pages/DashboardPage";
+import LogActivityPage from "../../pages/LogActivityPage";
+import ActivityHistoryPage from "../../pages/ActivityHistoryPage";
+import CarbonAnalyticsPage from "../../pages/CarbonAnalyticsPage";
+import GoalsPage from "../../pages/GoalsPage";
+import AchievementsPage from "../../pages/AchievementsPage";
+import SustainabilityHubPage from "../../pages/SustainabilityHubPage";
+import NotificationsPage from "../../pages/NotificationsPage";
+import SettingsPage from "../../pages/SettingsPage";
 
 export default function AppShell() {
-  const [page, setPage] = useState('dashboard')
-  const PageComponent = PAGE_MAP[page] || DashboardPage
-
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      fontFamily: "'Poppins', sans-serif",
-      background: C.bg,
-    }}>
-      <Sidebar page={page} setPage={setPage} />
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        fontFamily: "'Poppins', sans-serif",
+        background: C.bg,
+      }}
+    >
+      {/* Sidebar */}
+      <Sidebar />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-        <Navbar page={page} setPage={setPage} />
+      {/* Main content area */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "auto",
+        }}
+      >
+        {/* Navbar */}
+        <Navbar />
+
+        {/* Page Content */}
         <main style={{ flex: 1, padding: 28 }}>
-          <PageComponent setPage={setPage} />
+          <Routes>
+            <Route path="/" element={<Navigate to="dashboard" />} />
+
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="log" element={<LogActivityPage />} />
+            <Route path="history" element={<ActivityHistoryPage />} />
+            <Route path="analytics" element={<CarbonAnalyticsPage />} />
+            <Route path="goals" element={<GoalsPage />} />
+            <Route path="achievements" element={<AchievementsPage />} />
+            <Route path="hub" element={<SustainabilityHubPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Routes>
         </main>
       </div>
     </div>
-  )
+  );
 }

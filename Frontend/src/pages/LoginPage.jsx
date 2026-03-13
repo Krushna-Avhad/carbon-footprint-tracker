@@ -1,6 +1,9 @@
 import { C } from '../constants/colors'
 import AuthCard from '../components/ui/AuthCard'
 import Btn from '../components/ui/Btn'
+import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { login } from "../services/api"
 
 const inp = {
   width: '100%',
@@ -22,7 +25,41 @@ const lbl = {
   fontWeight: 500,
 }
 
-export default function LoginPage({ setView }) {
+export default function LoginPage() {
+
+  const navigate = useNavigate()
+
+  const [formData,setFormData] = useState({
+    email:"",
+    password:""
+  })
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleLogin = async () => {
+    try {
+
+      await login({
+        email: formData.email,
+        password: formData.password
+      })
+
+      alert("Login successfully 🌱")
+
+      navigate("/app/dashboard")
+
+    } catch (err) {
+
+      alert(err.response?.data?.message || "Login failed")
+
+    }
+  }
+
   return (
     <AuthCard
       title="Welcome Back"
@@ -31,11 +68,14 @@ export default function LoginPage({ setView }) {
         <>
           Don't have an account?{' '}
           <button
-            onClick={() => setView('signup')}
+            onClick={() => navigate('/signup')}
             style={{
-              color: C.deepGreen, fontWeight: 600,
-              background: 'none', border: 'none',
-              cursor: 'pointer', fontFamily: "'Poppins', sans-serif",
+              color: C.deepGreen,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'Poppins', sans-serif",
             }}
           >
             Sign Up
@@ -43,31 +83,61 @@ export default function LoginPage({ setView }) {
         </>
       }
     >
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
         <div>
           <label style={lbl}>Email Address</label>
-          <input type="email" placeholder="you@example.com" style={inp} />
+          <input
+            type="email"
+            name="email"
+            placeholder="you@example.com"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div>
           <label style={lbl}>Password</label>
-          <input type="password" placeholder="••••••••" style={inp} />
+          <input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            style={inp}
+            onChange={handleChange}
+          />
         </div>
+
         <div style={{ textAlign: 'right' }}>
           <button style={{
-            color: C.deepGreen, background: 'none',
-            border: 'none', fontSize: 13, cursor: 'pointer',
+            color: C.deepGreen,
+            background: 'none',
+            border: 'none',
+            fontSize: 13,
+            cursor: 'pointer',
             fontFamily: "'Poppins', sans-serif",
           }}>
             Forgot password?
           </button>
         </div>
-        <Btn onClick={() => setView('app')} style={{ width: '100%', padding: 14, fontSize: 15, marginTop: 4 }}>
+
+        <Btn
+          onClick={handleLogin}
+          style={{ width: '100%', padding: 14, fontSize: 15, marginTop: 4 }}
+        >
           Login to Dashboard
         </Btn>
-        <Btn onClick={() => setView('landing')} variant="ghost" style={{ width: '100%', padding: 12, fontSize: 13 }}>
+
+        <Btn
+          onClick={() => navigate('/')}
+          variant="ghost"
+          style={{ width: '100%', padding: 12, fontSize: 13 }}
+        >
           ← Back to Home
         </Btn>
+
       </div>
+
     </AuthCard>
   )
 }

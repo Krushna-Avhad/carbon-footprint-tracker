@@ -1,6 +1,8 @@
 import { C } from '../constants/colors'
 import Btn from '../components/ui/Btn'
 import Card from '../components/ui/Card'
+import { useNavigate } from "react-router-dom";
+
 
 const features = [
   { icon: '📊', title: 'Real-Time Analytics',   desc: 'Live charts tracking your emissions across transport, food, energy and waste.' },
@@ -15,7 +17,9 @@ const steps = [
   { step: '03', title: 'Reduce & Earn Badges', desc: 'Get actionable insights and unlock eco-achievements.' },
 ]
 
-export default function LandingPage({ setView }) {
+export default function LandingPage() {
+  const navigate = useNavigate();
+
   return (
     <div style={{ fontFamily: "'Poppins', sans-serif", background: C.bg, minHeight: '100vh' }}>
 
@@ -30,8 +34,8 @@ export default function LandingPage({ setView }) {
           <span style={{ fontWeight: 700, fontSize: 18, color: C.darkGreen }}>CarbonTrack</span>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <Btn variant="outline" onClick={() => setView('login')}>Login</Btn>
-          <Btn onClick={() => setView('signup')}>Get Started</Btn>
+          <Btn variant="outline" onClick={() => navigate('/login')}>Login</Btn>
+          <Btn onClick={() => navigate('/signup')}>Get Started</Btn>
         </div>
       </nav>
 
@@ -70,7 +74,7 @@ export default function LandingPage({ setView }) {
             Get Started — It's Free
           </Btn>
           <Btn
-            onClick={() => setView('login')}
+            onClick={() => navigate('/login')}
             variant="outline"
             style={{ padding: '14px 34px', fontSize: 16, color: '#fff', borderColor: 'rgba(255,255,255,0.5)' }}
           >

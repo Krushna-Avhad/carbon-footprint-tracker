@@ -11,7 +11,10 @@ const ActivitySchema = new mongoose.Schema({
      },
   data: mongoose.Mixed, // JSON for activity details
   co2Emissions: Number,
-  date: { type: Date, default: Date.now }
+  date: { 
+    type: Date, 
+    default: Date.now 
+  }
 });
 
 module.exports = mongoose.model('Activity', ActivitySchema);

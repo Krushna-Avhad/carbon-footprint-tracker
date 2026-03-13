@@ -1,6 +1,6 @@
 const Article = require('../models/ArticleM');
 
-// Create article (Admin)
+
 const createArticle = async (req, res) => {
   try {
     const article = new Article(req.body);
@@ -11,7 +11,7 @@ const createArticle = async (req, res) => {
   }
 };
 
-// Get all articles (Knowledge Hub)
+ 
 const getArticles = async (req, res) => {
   try {
     const articles = await Article.find().sort({ createdAt: -1 });
@@ -21,7 +21,7 @@ const getArticles = async (req, res) => {
   }
 };
 
-// Delete article (Admin)
+
 const deleteArticle = async (req, res) => {
   try {
     await Article.findByIdAndDelete(req.params.id);
