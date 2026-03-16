@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://carbonfootprinttracker-backend.onrender.com/api';
+//const BASE_URL = 'https://carbonfootprinttracker-backend.onrender.com/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -48,6 +49,11 @@ export const deleteActivity = (id)                      => API.delete(`/activiti
 /* ─── ANALYTICS ──────────────────────────────────────────── */
 export const getAnalytics    = (period = 'monthly') => API.get(`/analytics/${period}`).then(r => r.data);
 export const getMonthlyTrend = ()                   => API.get('/analytics/trend/monthly').then(r => r.data);
+export const getTrend = (period = 'monthly') => {
+  // Send browser's timezone offset to backend (in minutes, e.g. -330 for IST UTC+5:30)
+  const tz = new Date().getTimezoneOffset();
+  return API.get(`/analytics/trend/${period}`, { params: { tz } }).then(r => r.data);
+};
 export const getSummary      = ()                   => API.get('/analytics/summary').then(r => r.data);
 
 /* ─── GOALS ──────────────────────────────────────────────── */
