@@ -6,12 +6,12 @@ import {
 import { C, PIE_COLORS } from '../constants/colors'
 import Card from '../components/ui/Card'
 import StatCard from '../components/ui/StatCard'
-import { getAnalytics, getMonthlyTrend, getSummary } from '../services/api'
+import { getAnalytics, getTrend, getSummary } from '../services/api'
 
 const PERIODS = [
-  { value: 'daily',   label: 'Today'      },
-  { value: 'weekly',  label: 'This Week'  },
-  { value: 'monthly', label: 'This Month' },
+  { value: 'daily',   label: 'Today',      chartTitle: 'Hourly Breakdown — Today',        xKey: 'label', xLabel: 'Hour'  },
+  { value: 'weekly',  label: 'This Week',  chartTitle: 'Daily Breakdown — This Week',     xKey: 'label', xLabel: 'Day'   },
+  { value: 'monthly', label: 'This Month', chartTitle: 'Monthly Trend — Last 6 Months',   xKey: 'label', xLabel: 'Month' },
 ]
 
 function pctLabel(val) {
@@ -20,12 +20,17 @@ function pctLabel(val) {
   return `${sign} ${Math.abs(val)}% vs previous`
 }
 
+// Only show every Nth tick to avoid crowding on hourly chart
+const hourlyTick = (value, index) => index % 3 === 0 ? value : ''
+
 export default function CarbonAnalyticsPage() {
   const [period,    setPeriod]    = useState('monthly')
   const [analytics, setAnalytics] = useState(null)
-  const [trend,     setTrend]     = useState([])
+  const [trendData, setTrendData] = useState([])
   const [summary,   setSummary]   = useState(null)
   const [loading,   setLoading]   = useState(true)
+
+  const currentPeriod = PERIODS.find(p => p.value === period)
 
   useEffect(() => {
     const load = async () => {
@@ -33,11 +38,11 @@ export default function CarbonAnalyticsPage() {
       try {
         const [ana, trd, sum] = await Promise.all([
           getAnalytics(period),
-          getMonthlyTrend(),
+          getTrend(period),       // ← now fetches the correct trend for the period
           getSummary(),
         ])
         setAnalytics(ana)
-        setTrend(trd)
+        setTrendData(trd)
         setSummary(sum)
       } catch (err) {
         console.error(err)
@@ -46,9 +51,9 @@ export default function CarbonAnalyticsPage() {
       }
     }
     load()
-  }, [period])
+  }, [period])  // ← re-runs whenever period changes
 
-  // Build bar data from categoryEmissions
+  // Build bar chart data from category emissions
   const barData = analytics
     ? Object.entries(analytics.categoryEmissions || {}).map(([cat, val]) => ({
         category: cat.charAt(0).toUpperCase() + cat.slice(1),
@@ -56,12 +61,17 @@ export default function CarbonAnalyticsPage() {
       }))
     : []
 
-  // Build pie-style breakdown %
-  const totalCat = barData.reduce((s, d) => s + d.value, 0)
-  const catPercent = barData.map(d => ({
+  // Category percentage breakdown
+  const totalCat     = barData.reduce((s, d) => s + d.value, 0)
+  const catPercent   = barData.map(d => ({
     name:  d.category,
     value: totalCat > 0 ? parseFloat(((d.value / totalCat) * 100).toFixed(1)) : 0,
   }))
+
+  // For daily chart, only show every 3rd hour label to avoid crowding
+  const tickFormatter = period === 'daily'
+    ? (val, i) => i % 3 === 0 ? val : ''
+    : val => val
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
@@ -77,38 +87,75 @@ export default function CarbonAnalyticsPage() {
         <StatCard icon="📆" label="Monthly Emissions"
           value={loading ? '…' : `${summary?.monthly?.total ?? 0} kg`}
           sub={pctLabel(summary?.monthly?.vsLastMonth)} />
-        <StatCard icon="📦" label={`Total (${PERIODS.find(p => p.value === period)?.label})`}
+        <StatCard icon="📦" label={`Total (${currentPeriod?.label})`}
           value={loading ? '…' : `${analytics?.totalEmissions ?? 0} kg`}
-          sub="Current period" />
+          sub="Selected period" />
       </div>
 
-      {/* Period selector + Line chart */}
+      {/* Period selector + Dynamic trend chart */}
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>Emission Trends – 6 Months</div>
-            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>Monthly CO₂ in kg</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+              {currentPeriod?.chartTitle}
+            </div>
+            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
+              CO₂ emissions in kg · {currentPeriod?.xLabel}-by-{currentPeriod?.xLabel}
+            </div>
           </div>
-          <select
-            value={period} onChange={e => setPeriod(e.target.value)}
-            style={{ padding: '7px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, color: C.text, background: C.bg, fontFamily: "'Poppins', sans-serif", outline: 'none' }}
-          >
-            {PERIODS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-          </select>
+          {/* Period selector tabs */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {PERIODS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => setPeriod(p.value)}
+                style={{
+                  padding: '7px 14px', borderRadius: 8, fontSize: 12,
+                  cursor: 'pointer', fontFamily: "'Poppins', sans-serif",
+                  border: `1.5px solid ${period === p.value ? C.deepGreen : C.border}`,
+                  background: period === p.value ? C.deepGreen : C.card,
+                  color: period === p.value ? '#fff' : C.textMuted,
+                  fontWeight: period === p.value ? 600 : 400,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
+
         {loading ? (
-          <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textMuted }}>Loading chart…</div>
+          <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textMuted }}>
+            Loading chart…
+          </div>
+        ) : trendData.every(d => d.emissions === 0) ? (
+          <div style={{ height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.textMuted, gap: 8 }}>
+            <div style={{ fontSize: 36 }}>📊</div>
+            <div style={{ fontSize: 14 }}>No activities logged {period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month'} yet.</div>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={trend}>
+            <LineChart data={trendData} margin={{ left: 0, right: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: C.textMuted }} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: C.textMuted }}
+                tickFormatter={tickFormatter}
+                interval={period === 'daily' ? 2 : 0}
+              />
               <YAxis tick={{ fontSize: 12, fill: C.textMuted }} unit=" kg" />
-              <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13 }} />
+              <Tooltip
+                contentStyle={{ borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13 }}
+                formatter={(val) => [`${val} kg`, 'CO₂']}
+              />
               <Legend />
-              <Line type="monotone" dataKey="emissions" name="CO₂ (kg)"
+              <Line
+                type="monotone" dataKey="emissions" name="CO₂ (kg)"
                 stroke={C.deepGreen} strokeWidth={2.5}
-                dot={{ r: 5, fill: C.deepGreen }} activeDot={{ r: 7 }} />
+                dot={{ r: period === 'daily' ? 3 : 5, fill: C.deepGreen }}
+                activeDot={{ r: 7 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -117,7 +164,9 @@ export default function CarbonAnalyticsPage() {
       {/* Bar chart + Category breakdown */}
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
         <Card style={{ flex: 3, minWidth: 320 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 20 }}>Category Comparison</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 20 }}>
+            Category Comparison — {currentPeriod?.label}
+          </div>
           {loading || barData.length === 0 ? (
             <div style={{ height: 230, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textMuted, fontSize: 13 }}>
               {loading ? 'Loading…' : 'No data for this period'}
@@ -138,7 +187,9 @@ export default function CarbonAnalyticsPage() {
         </Card>
 
         <Card style={{ flex: 2, minWidth: 220 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 20 }}>Monthly Breakdown</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 20 }}>
+            Breakdown — {currentPeriod?.label}
+          </div>
           {catPercent.length === 0 ? (
             <div style={{ color: C.textMuted, fontSize: 13 }}>Log activities to see breakdown.</div>
           ) : catPercent.map((d, i) => (
