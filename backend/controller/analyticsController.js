@@ -163,4 +163,90 @@ const getSummary = async (req, res) => {
   }
 };
 
-module.exports = { getAnalytics, getMonthlyTrend, getSummary };
+
+// GET /api/analytics/trend/:period — dynamic trend based on period
+// daily   → 24 hours (grouped by hour)
+// weekly  → 7 days (grouped by day)
+// monthly → 6 months (grouped by month)
+const getTrend = async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const period = req.params.period;
+    const now    = new Date();
+    const points = [];
+
+    if (period === 'daily') {
+      // tzOffset is in minutes, sent by frontend (e.g. -330 for IST)
+      // We negate it to convert UTC → local
+      const tzOffset = parseInt(req.query.tz || '0');
+
+      for (let i = 23; i >= 0; i--) {
+        // Build start/end in UTC but accounting for local timezone
+        const localNow = new Date(now.getTime() - tzOffset * 60000);
+        const localStart = new Date(localNow);
+        localStart.setUTCHours(localNow.getUTCHours() - i, 0, 0, 0);
+        const localEnd = new Date(localStart);
+        localEnd.setUTCMinutes(59, 59, 999);
+
+        // Convert back to UTC for the DB query
+        const utcStart = new Date(localStart.getTime() + tzOffset * 60000);
+        const utcEnd   = new Date(localEnd.getTime()   + tzOffset * 60000);
+
+        const acts  = await Activity.find({ userId, date: { $gte: utcStart, $lte: utcEnd } });
+        const total = acts.reduce((s, a) => s + (a.co2Emissions || 0), 0);
+
+        const hour = localStart.getUTCHours();
+        const label = hour === 0 ? '12am'
+          : hour < 12 ? `${hour}am`
+          : hour === 12 ? '12pm'
+          : `${hour - 12}pm`;
+
+        points.push({ label, emissions: parseFloat(total.toFixed(2)) });
+      }
+    } else if (period === 'weekly') {
+      const tzOffset = parseInt(req.query.tz || '0');
+      const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      for (let i = 6; i >= 0; i--) {
+        // Get local date by adjusting for timezone
+        const localNow = new Date(now.getTime() - tzOffset * 60000);
+        const localDay = new Date(localNow);
+        localDay.setUTCDate(localNow.getUTCDate() - i);
+        localDay.setUTCHours(0, 0, 0, 0);
+        const localDayEnd = new Date(localDay);
+        localDayEnd.setUTCHours(23, 59, 59, 999);
+
+        // Convert to UTC for DB query
+        const utcStart = new Date(localDay.getTime()    + tzOffset * 60000);
+        const utcEnd   = new Date(localDayEnd.getTime() + tzOffset * 60000);
+
+        const acts  = await Activity.find({ userId, date: { $gte: utcStart, $lte: utcEnd } });
+        const total = acts.reduce((s, a) => s + (a.co2Emissions || 0), 0);
+
+        points.push({
+          label: i === 0 ? 'Today' : DAYS[localDay.getUTCDay()],
+          emissions: parseFloat(total.toFixed(2)),
+        });
+      }
+    } else {
+      // Monthly — last 6 months (existing behaviour)
+      for (let i = 5; i >= 0; i--) {
+        const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+        const acts  = await Activity.find({ userId, date: { $gte: start, $lte: end } });
+        const total = acts.reduce((s, a) => s + (a.co2Emissions || 0), 0);
+        points.push({
+          label: start.toLocaleString('default', { month: 'short' }),
+          emissions: parseFloat(total.toFixed(2)),
+        });
+      }
+    }
+
+    res.json(points);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Re-export with getTrend added
+module.exports = { getAnalytics, getMonthlyTrend, getSummary, getTrend };
