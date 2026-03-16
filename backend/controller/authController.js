@@ -5,6 +5,8 @@ const Activity     = require('../models/ActivityM');
 const Goal         = require('../models/GoalM');
 const Achievement  = require('../models/AchievementM');
 const Notification = require('../models/NotificationM');
+const mongoose     = require('mongoose');
+const { sendNotification } = require('./notificationController');
 
 const register = async (req, res) => {
   try {
@@ -58,6 +60,26 @@ const login = async (req, res) => {
     if (!match) return res.status(400).json({ message: 'Incorrect password.' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    // ── Inactivity check on login ──────────────────────────────────────────
+    // If user hasn't logged any activity in 3+ days, send a reminder
+    try {
+      const now         = new Date();
+      const userId      = new mongoose.Types.ObjectId(user._id);
+      const lastActivity = await Activity.findOne({ userId }).sort({ date: -1 });
+
+      if (lastActivity) {
+        const daysSince = Math.floor((now - new Date(lastActivity.date)) / (1000 * 60 * 60 * 24));
+        if (daysSince >= 3) {
+          await sendNotification(
+            user._id,
+            `📅 You haven't logged any activities in ${daysSince} day${daysSince !== 1 ? 's' : ''}. Keep your streak going!`,
+            'inactivity',
+            48 // don't repeat within 48 hours
+          );
+        }
+      }
+    } catch (_) {}
 
     res.json({
       token,
