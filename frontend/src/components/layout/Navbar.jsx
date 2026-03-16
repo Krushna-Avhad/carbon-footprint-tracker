@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { C } from '../../constants/colors'
-import { getSummary, getProfile } from '../../services/api'
+import { getSummary, getProfile, getNotifications } from '../../services/api'
 
 const PAGE_TITLES = {
   dashboard:     'Dashboard',
@@ -30,6 +30,12 @@ export default function Navbar() {
 
   const [ecoScore,    setEcoScore]    = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    getNotifications()
+      .then(data => setUnreadCount(data.filter(n => !n.read).length))
+      .catch(() => {})
+  }, [location.pathname]) // refresh count on every page change
   const [search,      setSearch]      = useState('')
   const [userName,    setUserName]    = useState('')
 
@@ -134,13 +140,20 @@ export default function Navbar() {
           style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', position: 'relative', padding: 4 }}
         >
           🔔
-          <span style={{
-            position: 'absolute', top: 2, right: 2,
-            width: 8, height: 8,
-            background: C.freshGreen,
-            borderRadius: '50%',
-            border: '2px solid #fff',
-          }} />
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute', top: -2, right: -2,
+              minWidth: 16, height: 16,
+              background: '#EF4444',
+              borderRadius: '50%',
+              border: '2px solid #fff',
+              fontSize: 9, fontWeight: 700,
+              color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Poppins', sans-serif",
+              padding: '0 3px',
+            }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
         </button>
 
         {/* Log Activity shortcut */}
