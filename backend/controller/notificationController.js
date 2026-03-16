@@ -1,10 +1,23 @@
 const Notification = require('../models/NotificationM');
 
-// Internal helper — called from activity/achievement controllers
-const sendNotification = async (userId, message) => {
-  const notification = new Notification({ userId, message });
-  await notification.save();
-  return notification;
+// ─── Internal helper — called from other controllers ──────────────────────────
+// Prevents duplicate notifications of the same type within a time window
+const sendNotification = async (userId, message, type = 'general', dedupeHours = 0) => {
+  try {
+    // If dedupeHours > 0, check if same message was already sent recently
+    if (dedupeHours > 0) {
+      const since = new Date(Date.now() - dedupeHours * 60 * 60 * 1000);
+      const exists = await Notification.findOne({ userId, message, date: { $gte: since } });
+      if (exists) return null; // already sent recently — skip
+    }
+
+    const notification = new Notification({ userId, message, type });
+    await notification.save();
+    return notification;
+  } catch (err) {
+    console.error('sendNotification error:', err.message);
+    return null;
+  }
 };
 
 // GET /api/notifications
