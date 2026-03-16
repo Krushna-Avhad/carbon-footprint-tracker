@@ -14,16 +14,28 @@ function timeAgo(dateStr) {
   return 'just now'
 }
 
-// Pick a relevant icon from the message text
-function iconFor(msg = '') {
-  if (msg.includes('achievement') || msg.includes('badge') || msg.includes('🏆')) return '🏆'
-  if (msg.includes('goal'))        return '🎯'
-  if (msg.includes('transport'))   return '🚗'
-  if (msg.includes('food'))        return '🥗'
-  if (msg.includes('energy'))      return '⚡'
-  if (msg.includes('report'))      return '📊'
-  if (msg.includes('reduced') || msg.includes('reduced')) return '🎉'
-  if (msg.includes('above') || msg.includes('warning'))   return '⚠️'
+// Icon based on notification type field (with message fallback)
+function iconFor(type = '', msg = '') {
+  const icons = {
+    achievement: '🏆',
+    goal:        '🎯',
+    streak:      '🔥',
+    summary:     '📊',
+    inactivity:  '📅',
+    deadline:    '⏳',
+    general:     '🌱',
+  }
+  if (icons[type]) return icons[type]
+  // Fallback: scan message text
+  if (msg.includes('🏆') || msg.includes('Achievement')) return '🏆'
+  if (msg.includes('🔥') || msg.includes('streak'))      return '🔥'
+  if (msg.includes('⚠️') || msg.includes('Warning'))     return '⚠️'
+  if (msg.includes('🔴') || msg.includes('exceeded'))    return '🔴'
+  if (msg.includes('📊') || msg.includes('week'))        return '📊'
+  if (msg.includes('⏳') || msg.includes('deadline'))    return '⏳'
+  if (msg.includes('📅') || msg.includes('haven'))       return '📅'
+  if (msg.includes('🌱') || msg.includes('first'))       return '🌱'
+  if (msg.includes('👋') || msg.includes('Welcome'))     return '👋'
   return '🔔'
 }
 
@@ -63,7 +75,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
+    <div style={{ maxWidth: 640 , margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 17, color: C.text }}>Notifications</div>
@@ -101,7 +113,7 @@ export default function NotificationsPage() {
             cursor: 'pointer',
             transition: 'background 0.15s',
           }}>
-            <div style={{ fontSize: 26, flexShrink: 0 }}>{iconFor(n.message)}</div>
+            <div style={{ fontSize: 26, flexShrink: 0 }}>{iconFor(n.type, n.message)}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, color: C.text, fontWeight: n.read ? 400 : 600, lineHeight: 1.5 }}>
                 {n.message}
