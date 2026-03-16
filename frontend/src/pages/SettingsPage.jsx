@@ -94,7 +94,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 24, margin: '0 auto' }}>
+    <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 24 , margin: '0 auto' }}>
 
       {/* ── Profile ── */}
       <Card>
@@ -172,17 +172,46 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* ── Notification Prefs (UI only — extend backend as needed) ── */}
+      {/* ── Notification Prefs ── */}
       <Card>
-        <div style={{ fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 18 }}>Notification Preferences</div>
-        {['Weekly emission reports', 'Goal milestone alerts', 'New achievements', 'Sustainability tips'].map(pref => (
-          <div key={pref} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ fontSize: 14, color: C.text }}>{pref}</span>
-            <div style={{ width: 40, height: 22, borderRadius: 11, background: C.deepGreen, position: 'relative', cursor: 'pointer' }}>
-              <div style={{ position: 'absolute', right: 3, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#fff' }} />
+        <div style={{ fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 4 }}>Notification Preferences</div>
+        <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 18 }}>Choose what notifications you receive.</div>
+        {[
+          { key: 'weeklyReports',    label: 'Weekly emission reports',  desc: 'A summary of your weekly CO₂ usage' },
+          { key: 'goalAlerts',       label: 'Goal milestone alerts',    desc: 'When you are close to or exceed a goal' },
+          { key: 'achievements',     label: 'New achievements',         desc: 'When you unlock a new badge' },
+          { key: 'sustainabilityTips', label: 'Sustainability tips',    desc: 'Occasional eco tips and articles' },
+        ].map(({ key, label, desc }) => {
+          const on = notifPrefs[key]
+          return (
+            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: `1px solid ${C.border}` }}>
+              <div>
+                <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>{label}</div>
+                <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{desc}</div>
+              </div>
+              <div
+                onClick={() => setNotifPrefs(p => ({ ...p, [key]: !p[key] }))}
+                style={{
+                  width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+                  background: on ? C.deepGreen : '#D1D5DB',
+                  position: 'relative', cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: 3,
+                  left: on ? 22 : 3,
+                  width: 18, height: 18,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  transition: 'left 0.2s',
+                }} />
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </Card>
 
       {/* ── Delete Account ── */}
