@@ -29,7 +29,11 @@ function formatDetails(type, data) {
   return JSON.stringify(data)
 }
 
-const todayStr = () => new Date().toISOString().split('T')[0]
+const todayStr  = () => new Date().toISOString().split('T')[0]
+const toTimeStr = (dateStr) => {
+  const d = new Date(dateStr)
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+}
 
 export default function ActivityHistoryPage() {
   const [data,     setData]     = useState([])
@@ -89,7 +93,7 @@ export default function ActivityHistoryPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+    <div style={{ maxWidth: 1100 , margin: '0 auto' }}>
       {editItem && (
         <EditModal
           item={editItem}
@@ -173,6 +177,9 @@ export default function ActivityHistoryPage() {
                 >
                   <td style={{ padding: '13px 14px', fontSize: 13, color: C.textMuted, whiteSpace: 'nowrap' }}>
                     {new Date(row.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                      {new Date(row.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td style={{ padding: '13px 14px' }}>
                     <span style={{
@@ -205,6 +212,7 @@ export default function ActivityHistoryPage() {
 function EditModal({ item, onClose, onSaved }) {
   const [form,   setForm]   = useState({ ...item.data })
   const [date,   setDate]   = useState(item.date ? new Date(item.date).toISOString().split('T')[0] : todayStr())
+  const [time,   setTime]   = useState(item.date ? toTimeStr(item.date) : '00:00')
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState('')
 
@@ -213,10 +221,11 @@ function EditModal({ item, onClose, onSaved }) {
   const handleSave = async () => {
     setSaving(true); setError('')
     try {
+      const combined = new Date(`${date}T${time}:00`).toISOString()
       const updated = await updateActivity(item._id, {
         type: item.type,
         data: form,
-        date: date,
+        date: combined,
       })
       onSaved(updated)
     } catch (err) {
@@ -232,9 +241,12 @@ function EditModal({ item, onClose, onSaved }) {
         <div style={{ fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 4 }}>Edit Activity</div>
         <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 20, textTransform: 'capitalize' }}>{item.type}</div>
 
-        {/* Date */}
-        <label style={modalLbl}>📅 Activity Date</label>
-        <input type="date" value={date} max={todayStr()} onChange={e => setDate(e.target.value)} style={modalInp} />
+        {/* Date + Time */}
+        <label style={modalLbl}>📅 Activity Date & Time</label>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <input type="date" value={date} max={todayStr()} onChange={e => setDate(e.target.value)} style={{ ...modalInp, flex: 2 }} />
+          <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...modalInp, flex: 1 }} />
+        </div>
 
         {/* Transport fields */}
         {item.type === 'transport' && <>
