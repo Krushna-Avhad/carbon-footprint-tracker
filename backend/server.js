@@ -21,7 +21,10 @@ app.use(cors({
 app.use(express.json());
 
 // Connect to MongoDB
-Database();
+Database().then(() => {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
 
 // Routes
 app.use('/api/auth',          authRoutes);
@@ -41,5 +44,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+//const PORT = process.env.PORT || 5000;
+//app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
