@@ -9,6 +9,7 @@ const TABS = [
   { id: 'food',      label: '🍽️ Food'      },
   { id: 'energy',    label: '⚡ Energy'    },
   { id: 'waste',     label: '🗑️ Waste'     },
+  { id: 'shopping',  label: '🛍️ Shopping'  },
 ]
 
 const inp = {
@@ -134,22 +135,58 @@ function WasteForm({ form, onChange }) {
   )
 }
 
-const FORM_MAP = { transport: TransportForm, food: FoodForm, energy: EnergyForm, waste: WasteForm }
+function ShoppingForm({ form, onChange }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <Field label="Item Category">
+        <select style={inp} name="item" value={form.item || ''} onChange={onChange}>
+          <option value="electronics">Electronics (phone, laptop, TV)</option>
+          <option value="clothing">Clothing / Apparel</option>
+          <option value="furniture">Furniture / Home goods</option>
+          <option value="other">Other</option>
+        </select>
+      </Field>
+      <Field label="Quantity">
+        <input type="number" style={inp} name="quantity" value={form.quantity || ''} onChange={onChange} placeholder="e.g. 1" min="1" />
+      </Field>
+      <Field label="Item Name (optional)">
+        <input type="text" style={inp} name="itemName" value={form.itemName || ''} onChange={onChange} placeholder="e.g. Laptop, T-shirt" />
+      </Field>
+    </div>
+  )
+}
+
+const FORM_MAP = { transport: TransportForm, food: FoodForm, energy: EnergyForm, waste: WasteForm, shopping: ShoppingForm }
 
 const DEFAULT_FORM = {
   transport: { mode: 'car',              distance: '',  passengers: '1' },
   food:      { meal: 'vegetarian',       servings: '1', locallySourced: 'Unknown' },
   energy:    { appliance: 'Air Conditioner', kwh: '',   hours: '', renewable: 'No' },
   waste:     { wasteType: 'General Waste',   kgWaste: '', disposal: 'Landfill' },
+  shopping:  { item: 'electronics',      quantity: '1', itemName: '' },
 }
 
 // Today's date in YYYY-MM-DD for the date input default
 const todayStr = () => new Date().toISOString().split('T')[0]
 
+// Current time in HH:MM (local time) for the time input default
+const nowTimeStr = () => {
+  const now = new Date()
+  const h = String(now.getHours()).padStart(2, '0')
+  const m = String(now.getMinutes()).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+// Combine date string + time string into a full ISO datetime (local timezone)
+const combineDateTime = (dateStr, timeStr) => {
+  return new Date(`${dateStr}T${timeStr}:00`)
+}
+
 export default function LogActivityPage() {
   const [tab,      setTab]      = useState('transport')
   const [formData, setFormData] = useState(DEFAULT_FORM)
   const [date,     setDate]     = useState(todayStr())
+  const [time,     setTime]     = useState(nowTimeStr())
   const [notes,    setNotes]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -171,13 +208,14 @@ export default function LogActivityPage() {
       const payload = {
         type: tab,
         data: { ...currentForm, notes },
-        date: date,   // ← send chosen date to backend
+        date: combineDateTime(date, time).toISOString(), // ← full datetime
       }
       const res = await logActivity(payload)
       setResult(res)
       setFormData(DEFAULT_FORM)
       setNotes('')
       setDate(todayStr())
+      setTime(nowTimeStr())
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to log activity. Try again.')
     } finally {
@@ -198,7 +236,7 @@ export default function LogActivityPage() {
           {result.co2Emissions} kg CO₂
         </div>
         <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 28 }}>
-          Logged for {new Date(result.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          Logged for {new Date(result.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {new Date(result.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
         </div>
         <Btn onClick={() => setResult(null)}>Log Another Activity</Btn>
       </Card>
@@ -232,26 +270,42 @@ export default function LogActivityPage() {
         ))}
       </div>
 
-      {/* ── Date Picker ── */}
+      {/* ── Date & Time Picker ── */}
       <div style={{
         marginBottom: 24, padding: '14px 16px',
         background: `${C.deepGreen}0D`,
         border: `1px solid ${C.deepGreen}33`,
         borderRadius: 10,
       }}>
-        <label style={{ ...lbl, color: C.deepGreen, fontWeight: 600, display: 'block', marginBottom: 6 }}>
-          📅 Activity Date
+        <label style={{ ...lbl, color: C.deepGreen, fontWeight: 600, display: 'block', marginBottom: 10 }}>
+          📅 Activity Date & Time
         </label>
-        <input
-          type="date"
-          value={date}
-          max={todayStr()}
-          onChange={e => setDate(e.target.value)}
-          style={{ ...inp, marginTop: 0, borderColor: C.deepGreen + '44', background: '#fff' }}
-        />
-        {date !== todayStr() && (
-          <div style={{ fontSize: 11, color: C.deepGreen, marginTop: 6, fontWeight: 500 }}>
-            📌 Backdating to {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+        <div style={{ display: 'flex', gap: 12 }}>
+          {/* Date */}
+          <div style={{ flex: 2 }}>
+            <label style={{ ...lbl, fontSize: 11, marginBottom: 4, display: 'block' }}>Date</label>
+            <input
+              type="date"
+              value={date}
+              max={todayStr()}
+              onChange={e => setDate(e.target.value)}
+              style={{ ...inp, marginTop: 0, borderColor: C.deepGreen + '44', background: '#fff' }}
+            />
+          </div>
+          {/* Time */}
+          <div style={{ flex: 1 }}>
+            <label style={{ ...lbl, fontSize: 11, marginBottom: 4, display: 'block' }}>Time</label>
+            <input
+              type="time"
+              value={time}
+              onChange={e => setTime(e.target.value)}
+              style={{ ...inp, marginTop: 0, borderColor: C.deepGreen + '44', background: '#fff' }}
+            />
+          </div>
+        </div>
+        {(date !== todayStr() || time !== nowTimeStr()) && (
+          <div style={{ fontSize: 11, color: C.deepGreen, marginTop: 8, fontWeight: 500 }}>
+            📌 Logging for {new Date(`${date}T${time}:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(`${date}T${time}:00`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
       </div>
@@ -281,13 +335,13 @@ export default function LogActivityPage() {
         marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.border}`,
       }}>
         <div style={{ fontSize: 12, color: C.textMuted }}>
-          {date === todayStr() ? "Logging for today" : `Logging for ${new Date(date + 'T00:00:00').toLocaleDateString()}`}
+          Logging for {date === todayStr() ? "today" : new Date(`${date}T${time}:00`).toLocaleDateString()} at {time}
         </div>
         <Btn onClick={handleSubmit} disabled={loading}>
           {loading ? 'Logging…' : 'Log Activity ✓'}
         </Btn>
       </div>
     </Card>
-    </div> 
+    </div>
   )
 }
