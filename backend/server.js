@@ -30,7 +30,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Routes
+// ── Routes registered BEFORE database connection ──
 app.use('/api/auth',          authRoutes);
 app.use('/api/activities',    activityRoutes);
 app.use('/api/analytics',     analyticsRoutes);
@@ -48,8 +48,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Internal server error' });
 });
 
-// Connect to MongoDB then start server
+// ── Connect DB then start server ──
 Database().then(() => {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}).catch(err => {
+  console.error('Failed to connect to MongoDB:', err.message);
+  process.exit(1);
 });
