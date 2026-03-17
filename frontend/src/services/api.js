@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 //const BASE_URL = 'https://carbonfootprinttracker-backend.onrender.com/api';
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
+//const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -42,7 +43,7 @@ export const deleteAccount  = (data) => API.delete('/auth/account', { data }).th
 /* ─── ACTIVITIES ─────────────────────────────────────────── */
 export const logActivity    = (data)                    => API.post('/activities', data).then(r => r.data);
 export const getActivities  = (type = 'All', range = 'all', search = '') =>
-  API.get('/activities', { params: { type, range } }).then(r => r.data);
+  API.get('/activities', { params: { type, range, ...(search ? { search } : {}) } }).then(r => r.data);
 export const updateActivity = (id, data)                => API.put(`/activities/${id}`, data).then(r => r.data);
 export const deleteActivity = (id)                      => API.delete(`/activities/${id}`).then(r => r.data);
 
