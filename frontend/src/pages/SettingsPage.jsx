@@ -30,6 +30,13 @@ export default function SettingsPage() {
   const [delLoading, setDelLoading] = useState(false)
   const [showDel,    setShowDel]    = useState(false)
 
+  const [notifPrefs, setNotifPrefs] = useState({
+    weeklyReports:     true,
+    goalAlerts:        true,
+    achievements:      true,
+    sustainabilityTips: false,
+  })
+
   // Load profile on mount
   useEffect(() => {
     getProfile().then(data => {
