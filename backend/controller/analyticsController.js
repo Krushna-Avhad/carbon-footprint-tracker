@@ -176,28 +176,32 @@ const getTrend = async (req, res) => {
     const points = [];
 
     if (period === 'daily') {
-      // tzOffset is in minutes, sent by frontend (e.g. -330 for IST)
-      // We negate it to convert UTC → local
+      // tzOffset from JS Date.getTimezoneOffset() is in minutes, positive WEST of UTC.
+      // IST (UTC+5:30) → tzOffset = -330.
+      // To get "local midnight in UTC" we ADD tzOffset minutes to local wall-clock midnight.
+      // i.e. IST midnight = UTC 00:00 - (-330 min) = UTC 18:30 previous day. Correct.
       const tzOffset = parseInt(req.query.tz || '0');
 
-      for (let i = 23; i >= 0; i--) {
-        // Build start/end in UTC but accounting for local timezone
-        const localNow = new Date(now.getTime() - tzOffset * 60000);
-        const localStart = new Date(localNow);
-        localStart.setUTCHours(localNow.getUTCHours() - i, 0, 0, 0);
-        const localEnd = new Date(localStart);
-        localEnd.setUTCMinutes(59, 59, 999);
+      // Find today's local midnight expressed in UTC
+      const localNow = new Date(now.getTime() - tzOffset * 60000); // shift to local time
+      const localMidnight = new Date(localNow);
+      localMidnight.setUTCHours(0, 0, 0, 0); // midnight in local time (as UTC)
 
-        // Convert back to UTC for the DB query
-        const utcStart = new Date(localStart.getTime() + tzOffset * 60000);
-        const utcEnd   = new Date(localEnd.getTime()   + tzOffset * 60000);
+      for (let i = 0; i < 24; i++) {
+        // Each slot is one local hour, expressed as UTC timestamps for the DB query
+        const slotLocalStart = new Date(localMidnight.getTime() + i * 3600000);
+        const slotLocalEnd   = new Date(slotLocalStart.getTime() + 3600000 - 1);
+
+        // Convert back to real UTC for MongoDB
+        const utcStart = new Date(slotLocalStart.getTime() + tzOffset * 60000);
+        const utcEnd   = new Date(slotLocalEnd.getTime()   + tzOffset * 60000);
 
         const acts  = await Activity.find({ userId, date: { $gte: utcStart, $lte: utcEnd } });
         const total = acts.reduce((s, a) => s + (a.co2Emissions || 0), 0);
 
-        const hour = localStart.getUTCHours();
+        const hour  = slotLocalStart.getUTCHours();
         const label = hour === 0 ? '12am'
-          : hour < 12 ? `${hour}am`
+          : hour < 12  ? `${hour}am`
           : hour === 12 ? '12pm'
           : `${hour - 12}pm`;
 
@@ -207,24 +211,24 @@ const getTrend = async (req, res) => {
       const tzOffset = parseInt(req.query.tz || '0');
       const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-      for (let i = 6; i >= 0; i--) {
-        // Get local date by adjusting for timezone
-        const localNow = new Date(now.getTime() - tzOffset * 60000);
-        const localDay = new Date(localNow);
-        localDay.setUTCDate(localNow.getUTCDate() - i);
-        localDay.setUTCHours(0, 0, 0, 0);
-        const localDayEnd = new Date(localDay);
-        localDayEnd.setUTCHours(23, 59, 59, 999);
+      // Find today's local midnight expressed in UTC
+      const localNow = new Date(now.getTime() - tzOffset * 60000);
+      const localMidnight = new Date(localNow);
+      localMidnight.setUTCHours(0, 0, 0, 0);
 
-        // Convert to UTC for DB query
-        const utcStart = new Date(localDay.getTime()    + tzOffset * 60000);
-        const utcEnd   = new Date(localDayEnd.getTime() + tzOffset * 60000);
+      for (let i = 6; i >= 0; i--) {
+        const dayLocalStart = new Date(localMidnight.getTime() - i * 86400000);
+        const dayLocalEnd   = new Date(dayLocalStart.getTime() + 86400000 - 1);
+
+        // Convert back to real UTC for MongoDB
+        const utcStart = new Date(dayLocalStart.getTime() + tzOffset * 60000);
+        const utcEnd   = new Date(dayLocalEnd.getTime()   + tzOffset * 60000);
 
         const acts  = await Activity.find({ userId, date: { $gte: utcStart, $lte: utcEnd } });
         const total = acts.reduce((s, a) => s + (a.co2Emissions || 0), 0);
 
         points.push({
-          label: i === 0 ? 'Today' : DAYS[localDay.getUTCDay()],
+          label: i === 0 ? 'Today' : DAYS[dayLocalStart.getUTCDay()],
           emissions: parseFloat(total.toFixed(2)),
         });
       }
